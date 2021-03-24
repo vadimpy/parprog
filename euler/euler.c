@@ -1,5 +1,4 @@
 #include "mpi.h"
-#include "euler.c"
 #include "stdio.h"
 
 #define N 4
