@@ -8,7 +8,6 @@
  - sort - not finished
 
 ### Build
-#### Build client:
 ```bash
 $ mkdir build; cd build
 $ cmake path/to/this/dir
