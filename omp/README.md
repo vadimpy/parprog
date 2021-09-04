@@ -7,9 +7,12 @@
  - example - Just an example
  - sort - not finished
 
+--help is available for each binary
+
+
 ### Build
-#### Build client:
 ```bash
 $ mkdir build; cd build
 $ cmake path/to/this/dir
+$ make
 ```
