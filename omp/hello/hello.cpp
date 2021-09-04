@@ -23,6 +23,10 @@ int main(int argc, char** argv) {
         while (next_id != me);
         std::cout << hello_world[me];
         ++next_id;
+        #pragma omp barrier
+        while (next_id != me + 1);
+        std::cout << '\n' << me;
+        --next_id;
     }
     std::cout << std::endl;
 
