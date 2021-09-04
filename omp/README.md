@@ -12,4 +12,5 @@
 ```bash
 $ mkdir build; cd build
 $ cmake path/to/this/dir
+$ make
 ```
