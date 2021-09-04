@@ -13,6 +13,7 @@ find_package(OpenMP REQUIRED)
 
 set(
     subdirs
+    example
     hello
     sum
 )

@@ -2,35 +2,27 @@
 #include <CLI11.hpp>
 #include <omp.h>
 #include <vector>
+#include <string>
 
 //{}[]
 
+const char hello_world[] = "hello world";
+
 int main(int argc, char** argv) {
-    CLI::App app{"OpenMP hello world example"};
+    CLI::App app{"OpenMP hello world"};
 
-    unsigned nworkers = 4;
-    app.add_option("-n,--nworkers", nworkers, "Amount of workers");
+    const auto nworkers = sizeof(hello_world);
 
+    unsigned next_id = 0;
     CLI11_PARSE(app, argc, argv);
 
-    std::vector<uint64_t> idx;
-    idx.reserve(nworkers);
-
-    omp_set_dynamic(0);
-    #pragma omp parallel shared(idx) num_threads(nworkers)
+    #pragma omp parallel shared(hello_world, next_id) num_threads(nworkers)
     {
-        uint64_t me = omp_get_thread_num();
-        #pragma omp critical
-        {
-            idx.push_back(me);
-            std::cout << "Worker " << me << " done\n";
-        }
+        auto me = omp_get_thread_num();
+        while (next_id != me);
+        std::cout << hello_world[me];
+        ++next_id;
     }
-
-    std::sort(idx.begin(), idx.end());
-    std::cout << "Sorted idx:\n";
-    for (auto id : idx) {
-        std::cout << "\t" << id << '\n';
-    } 
+    std::cout << std::endl;
     return 0;
 }
