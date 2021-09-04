@@ -6,6 +6,7 @@
  - sum - Computing sum from 1 to N by several threads
  - example - Just an example
  - sort - not finished
+
 --help is available for each binary
 
 
