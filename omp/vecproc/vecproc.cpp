@@ -32,7 +32,7 @@ void process_vec_inplace(std::vector<double> &data, const size_t threads_num) {
     std::cout << "Chunk size: " << chunk_size << '\n';
 
     // save thread-dependent data in read-only place to prevent races in corners of chunks
-    const std::vector<std::array<double, 2>> chunks_edges(threads_num + 1);
+    std::vector<std::array<double, 2>> chunks_edges(threads_num + 1);
     for (int i = 1; i < threads_num; ++i) {
         size_t tmp = i * chunk_size;
         chunks_edges[i][0] = data[tmp - 1];
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
         "Process vector inplace (e. g. without intermediate mem alloc)");
     app.add_option("-n, --nthreads", num_threads,
                    "Number of threads (defaults to 1)");
-    app.add_option("--seed", seed, "Seed random generator (defaults to 0)");
+    app.add_option("--seed", seed, "Seed for random generator (defaults to 0)");
     CLI11_PARSE(app, argc, argv);
 
     std::srand(seed);
