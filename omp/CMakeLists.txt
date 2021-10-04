@@ -20,6 +20,7 @@ set(
     sum
     vecproc
     matmul
+    exp
 )
 
 FOREACH(subdir IN LISTS subdirs)
