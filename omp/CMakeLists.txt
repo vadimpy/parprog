@@ -21,6 +21,7 @@ set(
     vecproc
     matmul
     exp
+    simples
 )
 
 FOREACH(subdir IN LISTS subdirs)
