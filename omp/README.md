@@ -10,6 +10,7 @@
  - exp - Taylor for exponent and cosine
  - sort - not finished
  - simples - Parrallel simple numbers search on the range from 1 to N
+ - qsort - Parallel qsort
 
 --help is available for each binary
 

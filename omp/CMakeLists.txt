@@ -22,6 +22,7 @@ set(
     matmul
     exp
     simples
+    qsort
 )
 
 FOREACH(subdir IN LISTS subdirs)
