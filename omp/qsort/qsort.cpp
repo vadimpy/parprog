@@ -8,6 +8,12 @@
 #include <algorithm>
 #include <chrono>
 
+enum InputMode {
+    RAND = 0,
+    STDIN = 1,
+    FILE_x = 2
+};
+
 void qsort(std::vector<int64_t> &a, size_t begin, size_t end, uint16_t current_depth, uint16_t max_depth) {
     if (begin >= end) return;
     size_t len = end + 1 - begin;
@@ -60,6 +66,8 @@ int main(int argc, char **argv) {
     int64_t a = -100;
     int64_t b = 100;
     uint16_t depth = 4;
+    bool verbose = false;
+    InputMode in_mode = InputMode::RAND;
 
     CLI::App app{"Parallel qsort"};
     app.add_option("-n", n, "length of array to be generated (defaults to 256)");
@@ -67,16 +75,43 @@ int main(int argc, char **argv) {
     app.add_option("-a", a, "Left edge of random range (defaults to -100)");
     app.add_option("-b", b, "Right edge of random range (defaults to 100)");
     app.add_option("--depth", depth, "Max depth for thread creation");
+    app.add_option("--input-mode", in_mode, "Input mode (0 - random, 1 - stdin, 2 - input.txt)");
+    app.add_flag("--verbose", verbose, "Output sorted array");
+
     CLI11_PARSE(app, argc, argv);
 
     std::srand(seed);
 
     omp_set_max_active_levels(depth);
 
-    std::vector<int64_t> arr(n);
-    for (size_t i = 0; i < n; ++i)
-        arr[i] = (std::rand() % (b - a + 1) + a);
+    std::vector<int64_t> arr;
+    switch (in_mode) {
+        case InputMode::RAND:
+            arr.resize(n);
+            for (size_t i = 0; i < n; ++i)
+                arr[i] = (std::rand() % (b - a + 1) + a);
+        break;
+        case InputMode::STDIN:
+            arr.resize(n);
+            for (size_t i = 0; i < n; ++i)
+                std::cin >> arr[i];
+        break;
+        case InputMode::FILE_x:
+            std::ifstream f("input.txt");
+            while (!f.eof()) {
+                int64_t x;
+                f >> x;
+                arr.push_back(x);
+            }
+        break;
+    }
+
     qsort(arr, 0, arr.size() - 1, 0, depth);
-    std::cout << (check_sorted(arr) ? "array is sorted\n" : "array is not sorted\n"); 
+    std::cout << (check_sorted(arr) ? "array is sorted\n" : "array is not sorted\n");
+    if (verbose) {
+        for (auto a: arr)
+            std::cout << a << ' ';
+        std::cout << '\n';
+    }
     return 0;
 }
