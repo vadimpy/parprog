@@ -23,7 +23,7 @@ $ cmake path/to/this/dir
 $ make
 ```
 
-### Heat:
+### Heat
 ```bash
 $ /path/to/build/heat/heat -n 100 -m 100 --frames 100 -j 4 > frames.txt
 $ python3 /path/to/scripts/colormap.py --frames 100 --input frames.txt 
