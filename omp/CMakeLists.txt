@@ -23,6 +23,7 @@ set(
     exp
     simples
     qsort
+    heat
 )
 
 FOREACH(subdir IN LISTS subdirs)
