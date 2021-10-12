@@ -112,7 +112,7 @@ inline void process_very_last_row(
     u[n-1][m-1] = 2 * alpha * (prev + prev_row[m-1] - 2 * last) + last;
 }
 
-inline void process_last_chunk_row(
+inline void process_chunk_last_row(
     std::vector<std::vector<double>> &u,
     std::vector<double> &prev_row,
     std::vector<std::vector<double>> edge_rows_buf,
@@ -174,7 +174,7 @@ void heat_step(std::vector<std::vector<double>> &u, size_t jobs, double alpha) {
         if (end == n)
             process_very_last_row(u, prev_row, n, m, alpha);
         else
-            process_last_chunk_row(u, prev_row, edge_rows_buf, alpha, end, m, t_num);
+            process_chunk_last_row(u, prev_row, edge_rows_buf, alpha, end, m, t_num);
     }
     
 }
