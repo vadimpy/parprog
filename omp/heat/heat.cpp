@@ -32,6 +32,112 @@ void heat_step_with_mem(std::vector<std::vector<double>> &u, std::vector<std::ve
     #undef d2u_dx2
 }
 
+inline void process_first_row(
+    std::vector<std::vector<double>> &u,
+    std::vector<double> &prev_row,
+    double alpha,
+    size_t m
+) {
+    for (size_t j = 0; j < m; ++j)
+        prev_row[j] = u[0][j];
+
+    double first = u[0][0];
+    u[0][0] = 2 * alpha * (u[1][0] + u[0][1] - 2 * first) + first;
+
+    double prev = first;
+    for (size_t j = 1; j < m - 1; ++j) {
+        double cur = u[0][j];
+        u[0][j] = 4 * alpha / 3 * (prev + u[1][j] + u[0][j+1] - 3 * cur) + cur;
+        prev = cur;
+    }
+
+    double last = u[0][m-1];
+    u[0][m-1] = 2 * alpha * (u[1][m-1] + prev - 2 * last) + last;
+}
+
+inline void init_prev_row(
+    std::vector<std::vector<double>> &u,
+    std::vector<double> &prev_row,
+    std::vector<std::vector<double>> &edge_rows_buf,
+    size_t m,
+    size_t t_num
+) {
+    size_t prev_row_buf_idx = (t_num - 1) * 2;
+    for (size_t j = 0; j < m; ++j)
+        prev_row[j] = edge_rows_buf[prev_row_buf_idx][j];
+}
+
+inline void process_mid_rows(
+    std::vector<std::vector<double>> &u,
+    std::vector<double> &prev_row,
+    size_t begin,
+    size_t end,
+    size_t m,
+    double alpha
+) {
+    for (size_t i = begin; i < end - 1; ++i) {
+
+        double first = u[i][0];
+        u[i][0] = 4 * alpha / 3 * (prev_row[0] + u[i][1] + u[i+1][0] - 3 * first) + first;
+        double prev = first;
+
+        for (size_t j = 1; j < m - 1; ++j) {
+            double cur = u[i][j];
+            u[i][j] = alpha * (prev + prev_row[j] + u[i+1][j] + u[i][j+1] - 4 * cur) + cur;
+            prev = prev_row[j] = cur;
+        }
+
+        double last = u[i][m-1];
+        u[i][m-1] = 4 * alpha / 3 * (prev + prev_row[m-1] + u[i+1][m-1] - 3 * last) + last;
+    }
+}
+
+inline void process_very_last_row(
+    std::vector<std::vector<double>> &u,
+    std::vector<double> &prev_row,
+    size_t n,
+    size_t m,
+    double alpha
+) {
+    double first = u[n-1][0];
+    u[n-1][0] = 2 * alpha * (prev_row[0] + u[n-1][1] - 2 * first) + first;
+
+    double prev = first;
+    for (size_t j = 1; j < m - 1; ++j) {
+        double cur = u[n-1][j];
+        u[n-1][j] = 4 * alpha / 3 * (prev + prev_row[j] + u[n-1][j+1] - 3 * cur) + cur;
+        prev = cur;
+    }
+    double last = u[n-1][m-1];
+    u[n-1][m-1] = 2 * alpha * (prev + prev_row[m-1] - 2 * last) + last;
+}
+
+inline void process_last_chunk_row(
+    std::vector<std::vector<double>> &u,
+    std::vector<double> &prev_row,
+    std::vector<std::vector<double>> edge_rows_buf,
+    double alpha,
+    size_t end,
+    size_t m,
+    size_t t_num
+) {
+    std::vector<double>& next_row = edge_rows_buf[t_num * 2 + 1];
+
+    double first = u[end-1][0];
+    u[end-1][0] = 4 * alpha / 3 * (prev_row[0] + next_row[0] + u[end-1][1] - 3 * first) + first;
+
+    double prev = first;
+    for (size_t j = 1; j < m - 1; ++j) {
+        double cur = u[end-1][j];
+        u[end-1][j] = alpha * (prev + prev_row[j] + next_row[j] + u[end-1][j+1] - 4 * cur) + cur;
+        prev = cur;
+    }
+
+    double last = u[end-1][m-1];
+    u[end-1][m-1] = 4 * alpha / 3 * (prev + prev_row[m-1] + next_row[m-1] - 3 * last) + last;
+
+}
+
 void heat_step(std::vector<std::vector<double>> &u, size_t jobs, double alpha) {
     size_t n = u.size();
     size_t m = u[0].size();
@@ -58,82 +164,17 @@ void heat_step(std::vector<std::vector<double>> &u, size_t jobs, double alpha) {
         size_t end = end(begin, chunk, n);
 
         if (begin == 0) {
-
-            for (size_t j = 0; j < m; ++j)
-                prev_row[j] = u[0][j];
-
-            double first = u[0][0];
-            u[0][0] = 2 * alpha * (u[1][0] + u[0][1] - 2 * first) + first;
-
-            double prev = first;
-            for (size_t j = 1; j < m - 1; ++j) {
-                double cur = u[0][j];
-                u[0][j] = 4 * alpha / 3 * (prev + u[1][j] + u[0][j+1] - 3 * cur) + cur;
-                prev = cur;
-            }
-
-            double last = u[0][m-1];
-            u[0][m-1] = 2 * alpha * (u[1][m-1] + prev - 2 * last) + last;
+            process_first_row(u, prev_row, alpha, m);
             ++begin;
+        } else
+            init_prev_row(u, prev_row, edge_rows_buf, m, t_num);
 
-        } else {
+        process_mid_rows(u, prev_row, begin, end, m, alpha);
 
-            size_t prev_row_buf_idx = (t_num - 1) * 2;
-            for (size_t j = 0; j < m; ++j)
-                prev_row[j] = edge_rows_buf[prev_row_buf_idx][j];
-
-        }
-
-        for (size_t i = begin; i < end - 1; ++i) {
-
-            double first = u[i][0];
-            u[i][0] = 4 * alpha / 3 * (prev_row[0] + u[i][1] + u[i+1][0] - 3 * first) + first;
-
-            double prev = first;
-            for (size_t j = 1; j < m - 1; ++j) {
-                double cur = u[i][j];
-                u[i][j] = alpha * (prev + prev_row[j] + u[i+1][j] + u[i][j+1] - 4 * cur) + cur;
-                prev = prev_row[j] = cur;
-            }
-
-            double last = u[i][m-1];
-            u[i][m-1] = 4 * alpha / 3 * (prev + prev_row[m-1] + u[i+1][m-1] - 3 * last) + last;
-
-        }
-
-        if (end == n) {
-
-            double first = u[end-1][0];
-            u[end-1][0] = 2 * alpha * (prev_row[0] + u[end-1][1] - 2 * first) + first;
-
-            double prev = first;
-            for (size_t j = 1; j < m - 1; ++j) {
-                double cur = u[end-1][j];
-                u[end-1][j] = 4 * alpha / 3 * (prev + prev_row[j] + u[end-1][j+1] - 3 * cur) + cur;
-                prev = cur;
-            }
-
-            double last = u[end-1][m-1];
-            u[end-1][m-1] = 2 * alpha * (prev + prev_row[m-1] - 2 * last) + last;
-
-        } else {
-
-            std::vector<double>& next_row = edge_rows_buf[t_num * 2 + 1];
-
-            double first = u[end-1][0];
-            u[end-1][0] = 4 * alpha / 3 * (prev_row[0] + next_row[0] + u[end-1][1] - 3 * first) + first;
-
-            double prev = first;
-            for (size_t j = 1; j < m - 1; ++j) {
-                double cur = u[end-1][j];
-                u[end-1][j] = alpha * (prev + prev_row[j] + next_row[j] + u[end-1][j+1] - 4 * cur) + cur;
-                prev = cur;
-            }
-
-            double last = u[end-1][m-1];
-            u[end-1][m-1] = 4 * alpha / 3 * (prev + prev_row[m-1] + next_row[m-1] - 3 * last) + last;
-
-        }
+        if (end == n)
+            process_very_last_row(u, prev_row, n, m, alpha);
+        else
+            process_last_chunk_row(u, prev_row, edge_rows_buf, alpha, end, m, t_num);
     }
     
 }
