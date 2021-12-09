@@ -12,6 +12,7 @@
  - sort - Qsort with Batcher odd-even merge (not finished)
  - heat - Parallel numerical solution of heat equation
  - example - Just an example
+ - bugged - Resolution of bugged programs
 
 --help is available for each binary
 
