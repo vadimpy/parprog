@@ -16,6 +16,7 @@ double comp_exp(double x0, size_t len, size_t jobs) {
         size_t begin = me * chunk;
         size_t end = std::min(begin + chunk, len);
 
+        // Computation of factorial base (bebin!)
         double fact = 1;
         double x = 1;
         for (size_t i = 1; i <= begin; ++i) {
@@ -23,6 +24,7 @@ double comp_exp(double x0, size_t len, size_t jobs) {
             x *= x0;
         }
 
+        // Sequential computation of next factorial value and sum accumulation
         double tmp = x * fact;
         for (size_t i = begin + 1; i < end; ++i) {
             fact /= i;
@@ -43,6 +45,7 @@ double comp_cos(double x0, size_t len, size_t jobs) {
     x0 = x0 * x0;
     #pragma omp parallel num_threads(jobs)
     {
+        // Same logic as in exp
         auto me = omp_get_thread_num();
         size_t begin = me * chunk;
         size_t end = std::min(begin + chunk, len);

@@ -82,6 +82,7 @@ int main(int argc, char **argv) {
 
     std::srand(seed);
 
+    omp_set_dynamic(0);
     omp_set_max_active_levels(depth);
 
     std::vector<int64_t> arr;

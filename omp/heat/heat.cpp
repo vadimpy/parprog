@@ -145,10 +145,11 @@ void heat_step(std::vector<std::vector<double>> &u, size_t jobs, double alpha) {
     size_t chunk = chunk(jobs, n);
     size_t pairs_amount = jobs - 1;
 
-    std::vector<std::vector<double>> edge_rows_buf(2 * pairs_amount);
+    std::vector<std::vector<double>> edge_rows_buf(2 * pairs_amount); // this vector is a
     for (auto &x: edge_rows_buf)
         x.resize(m);
 
+    // to prevent data race, let's copy all rw-shared values to logically read-only place to reuse it further
     for (size_t i = 0, k = chunk - 1; i < pairs_amount; i += 1, k += chunk)
         for (size_t j = 0; j < m; ++j) { 
             edge_rows_buf[2*i][j] = u[k][j];
@@ -157,11 +158,16 @@ void heat_step(std::vector<std::vector<double>> &u, size_t jobs, double alpha) {
 
     #pragma omp parallel num_threads(jobs) shared(u, edge_rows_buf)
     {
+        // chunks = sequence of rows with all columns (e. g. u[:chunk_size, :] is a chunk in Python-like syntax)
         auto t_num = omp_get_thread_num();
         std::vector<double> prev_row(m);
 
-        size_t begin = begin(t_num, chunk);
-        size_t end = end(begin, chunk, n);
+        size_t begin = begin(t_num, chunk); // number of the first chunk row 
+        size_t end = end(begin, chunk, n); // number of last+1 chunk row
+
+        // computation is divided to several stages to prevent data races
+        // and to apply different suitable formulas to the first row,
+        // the last row, u[0,0], u[0,m-1], u[n-1, 0], u[n-1, m-1] and chunks' edge rows
 
         if (begin == 0) {
             process_first_row(u, prev_row, alpha, m);
